@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | NutriTrack</title>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.4);
+            --bg-success: #10b981;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body, html {
+            margin: 0; padding: 0; min-height: 100%;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            background-attachment: fixed;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .dashboard-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-wrapper { grid-template-columns: 1fr; }
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        /* Profile & Stats */
+        .user-header { margin-bottom: 25px; }
+        .user-header h2 { margin: 0; color: var(--text-main); font-size: 1.5rem; }
+        .user-header span { color: var(--text-muted); font-size: 0.9rem; }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-value { font-weight: 800; font-size: 1.2rem; color: var(--primary); }
+
+        /* Form Styling */
+        form p { margin-bottom: 15px; display: flex; flex-direction: column; }
+        form label { font-size: 0.8rem; font-weight: 700; margin-bottom: 5px; color: var(--text-main); }
+        form input {
+            padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.5); width: 100%; box-sizing: border-box;
+        }
+        
+        .add-btn {
+            width: 100%; padding: 12px; border: none; border-radius: 12px;
+            background: var(--primary); color: white; font-weight: 700; cursor: pointer;
+            transition: transform 0.2s; box-shadow: 0 8px 15px var(--primary-glow);
+        }
+
+        /* List Styling */
+        .food-list { list-style: none; padding: 0; margin: 0; }
+        .food-item {
+            background: rgba(255, 255, 255, 0.3);
+            margin-bottom: 10px;
+            padding: 12px 18px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .food-name { font-weight: 600; color: var(--text-main); }
+        .food-cal { font-size: 0.85rem; color: var(--text-muted); background: white; padding: 4px 10px; border-radius: 20px; }
+
+        .logout-link {
+            display: inline-block; margin-top: 20px; color: #ef4444; 
+            text-decoration: none; font-size: 0.9rem; font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <div class="sidebar">
+            <div class="glass-panel">
+                <div class="user-header">
+                    <h2>Hello, {{ profile.user.username }}!</h2>
+                    <span>Track your goals today</span>
+                </div>
+
+                <div class="stat-card">
+                    <span>Daily BMR</span>
+                    <span class="stat-value">{{ bmr }} kcal</span>
+                </div>
+
+                <div class="stat-card" style="border-left: 4px solid var(--bg-success);">
+                    <span>Consumed</span>
+                    <span class="stat-value" style="color: var(--bg-success);">{{ total_consumed }} kcal</span>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.05); margin: 25px 0;">
+
+                <h3>Add Intake</h3>
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ calorie_form.as_p }}
+                    <button type="submit" class="add-btn">Add Record</button>
+                </form>
+                
+                <a href="{% url 'logout' %}" class="logout-link"><strong>Log out of account</strong></a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="glass-panel" style="min-height: 400px;">
+                <h3 style="margin-top: 0;">Today's Food Intake</h3>
+                <ul class="food-list">
+                    {% for item in daily_calories %}
+                        <li class="food-item">
+                            <span class="food-name">{{ item.item_name }}</span>
+                            <span class="food-cal">{{ item.calories }} kcal</span>
+                        </li>
+                    {% empty %}
+                        <li style="color: var(--text-muted); text-align: center; padding-top: 40px;">
+                            No entries yet. Start by adding your first meal.
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
